@@ -8,6 +8,15 @@ Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://j
 
 queries
 
+~~~~sql
+--> How many people reach their neares station in less than 5 minutes?
+
+SELECT SUM(nodes_tiles.einwohner)
+FROM moessingen_2po_4pgr_vertices_pgr
+JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
+WHERE moessingen_2po_4pgr_vertices_pgr.cost < 0.08333333;
+~~~~
+
 ```SQL
 --> How many people reach their neares station in less than 5 minutes?
 
