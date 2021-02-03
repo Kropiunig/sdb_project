@@ -1,37 +1,96 @@
-## Welcome to GitHub Pages
+## Spatial Databases - Presentation
 
 You can use the [editor on GitHub](https://github.com/Kropiunig/sdb_project/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
-### Markdown
+### sql queries
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+queries
 
-```markdown
-Syntax highlighted code block
+```SQL
+--> How many people reach their neares station in less than 5 minutes?
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+SELECT SUM(nodes_tiles.einwohner)
+FROM moessingen_2po_4pgr_vertices_pgr
+JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
+WHERE moessingen_2po_4pgr_vertices_pgr.cost < 0.08333333;
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+```SQL
+--> What percentage of resitents do not reach their neares station in 15 minutes?
+SELECT (
+	SELECT SUM(nodes_tiles.einwohner)
+	FROM moessingen_2po_4pgr_vertices_pgr
+	JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
+	WHERE moessingen_2po_4pgr_vertices_pgr.cost > 0.25
+) / (
+	SELECT SUM(einwohner)
+	FROM nodes_tiles
+) * 100 AS percentage;
+```
 
-### Jekyll Themes
+```SQL
+--> How many people live within the catchment area of the station 'Bodenhausen'?
+--> How many pople have 'Bodenhausen' as their closest station?
+SELECT SUM(nodes_tiles.einwohner)
+FROM moessingen_2po_4pgr_vertices_pgr 
+JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
+WHERE moessingen_2po_4pgr_vertices_pgr.station = 'Bodelshausen';
+```
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Kropiunig/sdb_project/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+```SQL
+--> Create table that contains the polygons of a voronoi partitioning of all nodes
+CREATE TABLE IF NOT EXISTS nodes_voronoi (
+   node_id integer NOT NULL,
+   geom geometry(POLYGON,4326) NOT NULL,
+   PRIMARY KEY (node_id),
+   FOREIGN KEY (node_id)
+      REFERENCES moessingen_2po_4pgr_vertices_pgr (gid)
+);
+INSERT INTO nodes_voronoi (
+	SELECT nodes.gid AS node_id, voronoi.geom AS geom
+	FROM moessingen_2po_4pgr_vertices_pgr AS nodes
+	JOIN (
+		SELECT (ST_Dump(ST_VoronoiPolygons(ST_Collect(geom)))).geom AS geom
+		FROM moessingen_2po_4pgr_vertices_pgr
+		WHERE station IS NOT NULL
+	) AS voronoi ON ST_Contains(voronoi.geom, nodes.geom)
+	WHERE nodes.station IS NOT NULL
+);
+```
 
-### Support or Contact
+```SQL
+--> What are the catchment areas of each station?
+SELECT nodes.station_id AS station_id, nodes.station AS station_name, ST_Union(nodes_voronoi.geom) AS catchment_area
+FROM moessingen_2po_4pgr_vertices_pgr AS nodes
+INNER JOIN nodes_voronoi ON nodes.gid=nodes_voronoi.node_id
+GROUP BY nodes.station, nodes.station_id;
+```
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+```SQL
+--> What station is closest to the 'Mühlgärtle' park in Mössingen (coordinates 9.059809°E, 48.407550°N)?
+SELECT station
+FROM moessingen_2po_4pgr_vertices_pgr
+ORDER BY ST_Distance(geom, ST_GeomFromText('POINT(9.059809 48.407550)', 4326)) ASC
+LIMIT 1
+```
+
+```SQL
+--> What station is closest to the public swimming pool in Mössingen (coordinates 9.067938°E 48.413985°N)?
+SELECT station
+FROM moessingen_2po_4pgr_vertices_pgr
+ORDER BY ST_Distance(geom, ST_GeomFromText('POINT(9.067938 48.413985)', 4326)) ASC
+LIMIT 1
+```
+
+```SQL
+--> Which station has the most people in its catchment area?
+SELECT haltepunkte_srid_4326.name, SUM(einwohner), haltepunkte_srid_4326.geom
+FROM haltepunkte_srid_4326 
+JOIN moessingen_2po_4pgr_vertices_pgr ON moessingen_2po_4pgr_vertices_pgr.station_id=haltepunkte_srid_4326.gid
+JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
+GROUP BY haltepunkte_srid_4326.gid
+ORDER BY "sum" DESC
+LIMIT 1
+```
