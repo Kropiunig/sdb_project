@@ -69,6 +69,7 @@ INNER JOIN nodes_voronoi ON nodes.gid=nodes_voronoi.node_id
 GROUP BY nodes.station, nodes.station_id;
 ~~~~
 ![Image](img/QueryResults/query4.png)
+![Image](img/QueryResults/query4geom.png)
 
 ### What station is closest to the 'Mühlgärtle' park in Mössingen (coordinates 9.059809°E, 48.407550°N)?
 ~~~~sql
