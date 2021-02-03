@@ -17,16 +17,7 @@ JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
 WHERE moessingen_2po_4pgr_vertices_pgr.cost < 0.08333333;
 ~~~~
 
-```SQL
---> How many people reach their neares station in less than 5 minutes?
-
-SELECT SUM(nodes_tiles.einwohner)
-FROM moessingen_2po_4pgr_vertices_pgr
-JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
-WHERE moessingen_2po_4pgr_vertices_pgr.cost < 0.08333333;
-```
-
-```SQL
+~~~~sql
 --> What percentage of resitents do not reach their neares station in 15 minutes?
 SELECT (
 	SELECT SUM(nodes_tiles.einwohner)
@@ -37,18 +28,18 @@ SELECT (
 	SELECT SUM(einwohner)
 	FROM nodes_tiles
 ) * 100 AS percentage;
-```
+~~~~
 
-```SQL
+~~~~sql
 --> How many people live within the catchment area of the station 'Bodenhausen'?
 --> How many pople have 'Bodenhausen' as their closest station?
 SELECT SUM(nodes_tiles.einwohner)
 FROM moessingen_2po_4pgr_vertices_pgr 
 JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
 WHERE moessingen_2po_4pgr_vertices_pgr.station = 'Bodelshausen';
-```
+~~~~
 
-```SQL
+~~~~sql
 --> Create table that contains the polygons of a voronoi partitioning of all nodes
 CREATE TABLE IF NOT EXISTS nodes_voronoi (
    node_id integer NOT NULL,
@@ -67,33 +58,33 @@ INSERT INTO nodes_voronoi (
 	) AS voronoi ON ST_Contains(voronoi.geom, nodes.geom)
 	WHERE nodes.station IS NOT NULL
 );
-```
+~~~~
 
-```SQL
+~~~~sql
 --> What are the catchment areas of each station?
 SELECT nodes.station_id AS station_id, nodes.station AS station_name, ST_Union(nodes_voronoi.geom) AS catchment_area
 FROM moessingen_2po_4pgr_vertices_pgr AS nodes
 INNER JOIN nodes_voronoi ON nodes.gid=nodes_voronoi.node_id
 GROUP BY nodes.station, nodes.station_id;
-```
+~~~~
 
-```SQL
+~~~~sql
 --> What station is closest to the 'Mühlgärtle' park in Mössingen (coordinates 9.059809°E, 48.407550°N)?
 SELECT station
 FROM moessingen_2po_4pgr_vertices_pgr
 ORDER BY ST_Distance(geom, ST_GeomFromText('POINT(9.059809 48.407550)', 4326)) ASC
 LIMIT 1
-```
+~~~~
 
-```SQL
+~~~~sql
 --> What station is closest to the public swimming pool in Mössingen (coordinates 9.067938°E 48.413985°N)?
 SELECT station
 FROM moessingen_2po_4pgr_vertices_pgr
 ORDER BY ST_Distance(geom, ST_GeomFromText('POINT(9.067938 48.413985)', 4326)) ASC
 LIMIT 1
-```
+~~~~
 
-```SQL
+~~~~sql
 --> Which station has the most people in its catchment area?
 SELECT haltepunkte_srid_4326.name, SUM(einwohner), haltepunkte_srid_4326.geom
 FROM haltepunkte_srid_4326 
@@ -102,4 +93,4 @@ JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
 GROUP BY haltepunkte_srid_4326.gid
 ORDER BY "sum" DESC
 LIMIT 1
-```
+~~~~
