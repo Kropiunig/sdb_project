@@ -9,9 +9,9 @@ We start with the following shapefiles provided by the ‘Regionalverband Neckar
 - a raster of Baden-Württemberg, each tile owning an information about the number of inhabitants living within this tile.
 - the communities of Baden-Württemberg
 
-In order to get any information about the street network of our examined region, we use the datasets being available at the Geofabrik download server (download.geofabrik.de/europe/germany/baden-wuerttemberg.html), where we download tuebingen-regbez-latest.osm.pbf to get the street network of our administrative district.
+In order to get any information about the street network of our examined region, we use the datasets being available at the [Geofabrik download server](download.geofabrik.de/europe/germany/baden-wuerttemberg.html), where we download tuebingen-regbez-latest.osm.pbf to get the street network of our administrative district.
 
-In addition, we downloaded the program osm2po (www.osm2po.de) to convert tuebingen-regbez-latest.osm.pbf for postgis usage. We decided for version 5.0.0, as it is known that there are some bugs in the newer versions of osm2po.
+In addition, we downloaded the program [osm2po](https://www.osm2po.de) to convert tuebingen-regbez-latest.osm.pbf for postgis usage. We decided for version 5.0.0, as it is known that there are some bugs in the newer versions of osm2po.
 
 After we ran the program osm2po over tuebingen-regbez-latest.osm.pbf, we receive a SQL-dataset. The instructions of this dataset were copied into the query tool of PgAdmin and executed. We now receive a SQL table called moessingen_2po_4pgr, which consists of the regional street network and already includes a cost column, which can be interpreted as the time cost (in hours) of traversing a single street segment by individual motor car traffic. 
 
