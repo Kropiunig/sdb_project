@@ -9,7 +9,7 @@ We start with the following shapefiles provided by the ‘Regionalverband Neckar
 - a raster of Baden-Württemberg, each tile owning an information about the number of inhabitants living within this tile.
 - the communities of Baden-Württemberg
 
-In order to get any information about the street network of our examined region, we use the datasets being available at the [Geofabrik download server](download.geofabrik.de/europe/germany/baden-wuerttemberg.html), where we download tuebingen-regbez-latest.osm.pbf to get the street network of our administrative district.
+In order to get any information about the street network of our examined region, we use the datasets being available at the [Geofabrik download server](https://www.download.geofabrik.de/europe/germany/baden-wuerttemberg.html), where we download tuebingen-regbez-latest.osm.pbf to get the street network of our administrative district.
 
 In addition, we downloaded the program [osm2po](https://www.osm2po.de) to convert tuebingen-regbez-latest.osm.pbf for postgis usage. We decided for version 5.0.0, as it is known that there are some bugs in the newer versions of osm2po.
 
