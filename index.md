@@ -1,7 +1,23 @@
-## Spatial Databases - Presentation
+# Spatial Databases - Presentation
 
+## Capability analysis of planned commuter railway system “Neckar-Alb”
 
-### 1. Available Datasets
+### 1. Project Description
+
+In this project we will show the benefits of the commuter railway system that is going to be established in the region 
+"Neckar-Alb". Examples of measures we want to compute are "How fast can central towns be reached?", "Which 
+infrastructure within the catchment areas of the stations get better accessibility?", or "How many people can reach
+their nearest station withing 5 (10, 15, ...) minutes?". More information about the railway system can be found 
+[here](https://www.regionalstadtbahn.de).
+
+Our project contains the following spatial components: locations of stations, analyzed catchment areas, tiles with
+population information, boundaries of municipalities and the region itself, the street network and the crossings 
+as vertices.
+
+In the following sections we describe how we processed the data for our model and present some example queries.
+Then we give a brief outlook of our next steps.
+
+### 2. Available Datasets
 
 We start with the following shapefiles provided by the ‘Regionalverband Neckar-Alb’:
 
@@ -17,7 +33,7 @@ After we ran the program osm2po over tuebingen-regbez-latest.osm.pbf, we receive
 
 The available shapefiles are uploaded to PgAdmin too. The SRID necessary to upload them is 4326. Because the shapefiles are originally using another SRID, they have to be reprojected before the upload. The Postgis GUI is actually used for the uploading process. Their table names are gitter_region_srid_4326, haltepunkte_srid_4326 and gemeinden_srid_4326.
 
-### 2. Proceedings in PgAdmin
+### 3. Proceedings in PgAdmin
 
 At first, we try to create a topology of this street network. For unknown reasons this is only possible when we delete the columns of source and target once and then reintroduce them. The following SQL query has been used:
 
@@ -189,7 +205,7 @@ SELECT update_nodes_tiles( );
 
 The data structure demanded for specialized queries is established, so we can continue with exciting queries.
 
-### 3. Queries
+### 4. Queries
 
 ### How many people reach their neares station in less than 5 minutes?
 ~~~~sql
@@ -286,7 +302,7 @@ LIMIT 1
 ![Image](img/QueryResults/query7.png)
 
 
-### 4. Further outlook
+### 5. Further outlook
 
 We produced a mockup map of the catchment area and we will in further iterations improve this map cartographically.
 
@@ -298,3 +314,7 @@ For the final report we will also validate our current results and prove the con
 
 In addition we try to improve our database by defining primary and foreign keys and indices.
 All tables should be in third normal form in the end.
+
+Regarding the partitioning of work, Johannes came up with the initial project proposal and focused primarily on the 
+preprocessing of data while Alexander and David did most of the queries. In total everyone did about a third of the
+work.
