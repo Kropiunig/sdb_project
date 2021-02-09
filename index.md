@@ -284,3 +284,17 @@ ORDER BY "sum" DESC
 LIMIT 1
 ~~~~
 ![Image](img/QueryResults/query7.png)
+
+
+### 4. Further outlook
+
+We produced a mockup map of the catchment area and we will in further iterations improve this map cartographically.
+
+![Image](img/Karte2.png)
+
+Perhaps we will create a second map, pointing out the time cost necessary to travel to the nearest train station.
+
+For the final report we will also validate our current results and prove the constancy of the open street map data.
+
+In addition we try to improve our database by defining primary and foreign keys and indices.
+All tables should be in third normal form in the end.
