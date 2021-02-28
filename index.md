@@ -321,34 +321,34 @@ Here the database gets transformed in third normal form. Some indices were creat
 
 ### How many people reach their neares station in less than 5 minutes?
 ~~~~sql
-SELECT SUM(nodes_tiles.einwohner)
-FROM moessingen_2po_4pgr_vertices_pgr
-JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
-WHERE moessingen_2po_4pgr_vertices_pgr.cost < 0.08333333;
+SELECT SUM(nodes_tiles.residents)
+FROM nodes
+JOIN nodes_tiles ON nodes.id=nodes_tiles.node_id
+WHERE nodes.cost < 0.08333333;
 ~~~~
 ![Image](img/QueryResults/query1.png)
 
 ### What percentage of resitents do not reach their neares station in 15 minutes?
 ~~~~sql
 SELECT (
-	SELECT SUM(nodes_tiles.einwohner)
-	FROM moessingen_2po_4pgr_vertices_pgr
-	JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
-	WHERE moessingen_2po_4pgr_vertices_pgr.cost > 0.25
+	SELECT SUM(nodes_tiles.residents)
+	FROM nodes
+	JOIN nodes_tiles ON nodes.id=nodes_tiles.node_id
+	WHERE nodes.cost > 0.25
 ) / (
-	SELECT SUM(einwohner)
+	SELECT SUM(residents)
 	FROM nodes_tiles
 ) * 100 AS percentage;
 ~~~~
 ![Image](img/QueryResults/query2.png)
 
-### How many people live within the catchment area of the station 'Bodenhausen'?
-### How many pople have 'Bodenhausen' as their closest station?
+### How many pople have ‘Bodenhausen’ as their closest station?
 ~~~~sql
-SELECT SUM(nodes_tiles.einwohner)
-FROM moessingen_2po_4pgr_vertices_pgr 
-JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
-WHERE moessingen_2po_4pgr_vertices_pgr.station = 'Bodelshausen';
+SELECT SUM(nodes_tiles.residents)
+FROM nodes 
+JOIN nodes_tiles ON nodes.id=nodes_tiles.node_id
+JOIN stations ON nodes.station_id=stations.id
+WHERE stations.name = 'Bodelshausen';
 ~~~~
 ![Image](img/QueryResults/query3.png)
 
@@ -375,41 +375,42 @@ INSERT INTO nodes_voronoi (
 
 ### What are the catchment areas of each station?
 ~~~~sql
-SELECT nodes.station_id AS station_id, nodes.station AS station_name, ST_Union(nodes_voronoi.geom) AS catchment_area
-FROM moessingen_2po_4pgr_vertices_pgr AS nodes
-INNER JOIN nodes_voronoi ON nodes.gid=nodes_voronoi.node_id
-GROUP BY nodes.station, nodes.station_id;
+SELECT stations.name, catchment_areas.geom
+FROM catchment_areas
+JOIN stations ON stations.id=catchment_areas.station_id;
 ~~~~
 ![Image](img/QueryResults/query4.png)
 ![Image](img/QueryResults/query4geom.png)
 
 ### What station is closest to the 'Mühlgärtle' park in Mössingen (coordinates 9.059809°E, 48.407550°N)?
 ~~~~sql
-SELECT station
-FROM moessingen_2po_4pgr_vertices_pgr
-ORDER BY ST_Distance(geom, ST_GeomFromText('POINT(9.059809 48.407550)', 4326)) ASC
-LIMIT 1
+SELECT stations.name
+FROM nodes
+JOIN stations ON nodes.station_id=stations.id
+ORDER BY ST_Distance(nodes.geom, ST_GeomFromText('POINT(9.059809 48.407550)', 4326)) ASC
+LIMIT 1;
 ~~~~
 ![Image](img/QueryResults/query5.png)
 
 ### What station is closest to the public swimming pool in Mössingen (coordinates 9.067938°E 48.413985°N)?
 ~~~~sql
-SELECT station
-FROM moessingen_2po_4pgr_vertices_pgr
-ORDER BY ST_Distance(geom, ST_GeomFromText('POINT(9.067938 48.413985)', 4326)) ASC
-LIMIT 1
+SELECT stations.name
+FROM nodes
+JOIN stations ON nodes.station_id=stations.id
+ORDER BY ST_Distance(nodes.geom, ST_GeomFromText('POINT(9.067938 48.413985)', 4326)) ASC
+LIMIT 1;
 ~~~~
 ![Image](img/QueryResults/query6.png)
 
 ### Which station has the most people in its catchment area?
 ~~~~sql
-SELECT haltepunkte_srid_4326.name, SUM(einwohner), haltepunkte_srid_4326.geom
-FROM haltepunkte_srid_4326 
-JOIN moessingen_2po_4pgr_vertices_pgr ON moessingen_2po_4pgr_vertices_pgr.station_id=haltepunkte_srid_4326.gid
-JOIN nodes_tiles ON moessingen_2po_4pgr_vertices_pgr.id=nodes_tiles.id
-GROUP BY haltepunkte_srid_4326.gid
-ORDER BY "sum" DESC
-LIMIT 1
+SELECT stations.name, SUM(nodes_tiles.residents), stations.geom
+FROM stations 
+JOIN nodes ON nodes.station_id=stations.id
+JOIN nodes_tiles ON nodes.id=nodes_tiles.node_id
+GROUP BY stations.id
+ORDER BY SUM(nodes_tiles.residents) DESC
+LIMIT 1;
 ~~~~
 ![Image](img/QueryResults/query7.png)
 
