@@ -205,6 +205,118 @@ SELECT update_nodes_tiles( );
 
 The data structure demanded for specialized queries is established, so we can continue with exciting queries.
 
+~~~~sql
+ALTER TABLE nodes_tiles RENAME COLUMN id TO node_id;
+ALTER TABLE nodes_tiles RENAME COLUMN gid TO tile_id;
+ALTER TABLE nodes_tiles RENAME COLUMN einwohner TO residents;
+--ALTER TABLE nodes_tiles DROP CONSTRAINT nodes_tiles_pk;
+--ALTER TABLE nodes_tiles DROP COLUMN ogc_fid;
+ALTER TABLE nodes_tiles ALTER COLUMN node_id TYPE INTEGER;
+ALTER TABLE nodes_tiles ALTER COLUMN tile_id TYPE INTEGER;
+ALTER TABLE nodes_tiles ADD PRIMARY KEY (node_id, tile_id);
+
+ALTER TABLE moessingen_2po_4pgr_vertices_pgr RENAME TO nodes;
+ALTER TABLE nodes DROP COLUMN cnt;
+ALTER TABLE nodes DROP COLUMN chk;
+ALTER TABLE nodes DROP COLUMN ein;
+ALTER TABLE nodes DROP COLUMN eout;
+ALTER TABLE nodes DROP COLUMN station;
+--ALTER TABLE nodes_voronoi DROP CONSTRAINT nodes_voronoi_node_id_fkey;
+ALTER TABLE nodes DROP CONSTRAINT moessingen_2po_4pgr_vertices_pgr_pkey;
+ALTER TABLE nodes DROP COLUMN gid;
+ALTER TABLE nodes ALTER COLUMN id TYPE INTEGER;
+ALTER TABLE nodes ALTER COLUMN station_id TYPE INTEGER;
+ALTER TABLE nodes ADD PRIMARY KEY (id);
+
+CREATE TABLE stations AS
+  SELECT gid AS id, name, nearest_node AS nearest_node_id, distance, geom
+  FROM haltepunkte_srid_4326;
+DROP TABLE haltepunkte_srid_4326;
+ALTER TABLE stations ALTER COLUMN nearest_node_id TYPE INTEGER;
+ALTER TABLE stations ADD PRIMARY KEY (id);
+
+CREATE TABLE tiles AS
+  SELECT gid AS id, einwohner AS residents, geom
+  FROM gitter_region_srid_4326;
+DROP TABLE gitter_region_srid_4326;
+ALTER TABLE tiles ADD PRIMARY KEY (id);
+
+--CREATE TABLE municipalities AS
+--  SELECT gid AS id, gemeinde_n AS name, kreis_name AS administrative_district, geom
+--  FROM gemeinden_srid_4326;
+--DROP TABLE gemeinden_srid_4326;
+--ALTER TABLE municipalities ADD PRIMARY KEY (id);
+
+CREATE TABLE regions AS
+  SELECT gid AS id, region_nam AS name, geom
+  FROM region_srid_4326;
+DROP TABLE region_srid_4326;
+ALTER TABLE regions ADD PRIMARY KEY (id);
+
+ALTER TABLE nodes ADD FOREIGN KEY (station_id) REFERENCES stations (id);
+ALTER TABLE nodes_tiles ADD FOREIGN KEY (node_id) REFERENCES nodes (id);
+ALTER TABLE nodes_tiles ADD FOREIGN KEY (tile_id) REFERENCES tiles (id);
+ALTER TABLE stations ADD FOREIGN KEY (nearest_node_id) REFERENCES nodes (id);
+
+ALTER TABLE nodes RENAME COLUMN the_geom TO geom;
+
+DROP INDEX moessingen_2po_4pgr_vertices_pgr_the_geom_idx;
+
+CREATE UNIQUE INDEX ON nodes (id);
+CREATE INDEX ON nodes (station_id);
+CREATE INDEX ON nodes USING GIST (geom);
+
+CREATE UNIQUE INDEX ON nodes_tiles (node_id, tile_id);
+
+CREATE UNIQUE INDEX ON regions (id);
+CREATE INDEX ON regions USING GIST (geom);
+
+CREATE UNIQUE INDEX ON stations (id);
+CREATE INDEX ON stations (nearest_node_id);
+CREATE INDEX ON stations USING GIST (geom);
+
+CREATE UNIQUE INDEX ON tiles (id);
+CREATE INDEX ON tiles USING GIST (geom);
+
+CREATE TABLE IF NOT EXISTS nodes_voronoi (
+   node_id INTEGER NOT NULL,
+   geom geometry(POLYGON, 4326) NOT NULL,
+   PRIMARY KEY (node_id),
+   FOREIGN KEY (node_id)
+      REFERENCES nodes (id)
+);
+INSERT INTO nodes_voronoi (
+	SELECT nodes.id AS node_id, voronoi.geom AS geom
+	FROM nodes
+	JOIN (
+		SELECT (ST_Dump(ST_VoronoiPolygons(ST_Collect(geom)))).geom AS geom
+		FROM nodes
+		WHERE station_id IS NOT NULL
+	) AS voronoi ON ST_Contains(voronoi.geom, nodes.geom)
+	WHERE nodes.station_id IS NOT NULL
+);
+
+CREATE UNIQUE INDEX ON nodes_voronoi (node_id);
+CREATE INDEX ON nodes_voronoi USING GIST (geom);
+
+CREATE TABLE catchment_areas AS
+  SELECT nodes.station_id AS station_id, ST_Union(nodes_voronoi.geom) AS geom
+  FROM nodes
+  JOIN nodes_voronoi ON nodes.id=nodes_voronoi.node_id
+  GROUP BY nodes.station_id;
+
+ALTER TABLE catchment_areas ADD PRIMARY KEY (station_id);
+ALTER TABLE catchment_areas ADD FOREIGN KEY (station_id) REFERENCES stations (id);
+
+CREATE UNIQUE INDEX ON catchment_areas (station_id);
+CREATE INDEX ON catchment_areas USING GIST (geom);
+
+CREATE INDEX ON nodes (cost);
+CREATE INDEX ON stations (name);
+~~~~
+
+Here the database gets transformed in third normal form. Some indices were created to accelerate the working procedure.
+
 ### 4. Queries
 
 ### How many people reach their neares station in less than 5 minutes?
